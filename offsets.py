@@ -1,0 +1,10 @@
+off_base = 0x331C50 # 模块偏移
+off_first = 0x868 # 一级偏移
+off_zombieLimit = 0xac # 僵尸上限
+off_zombieQuantity = 0xb8 # 当前僵尸数量
+off_zombie = 0xa8 # 僵尸地址
+off_zombieX = 0x2c # 僵尸X坐标
+off_zombieY = 0x30 # 僵尸Y坐标
+off_zombieL = 0x1c
+off_zombieHealth = 0xc8 # 僵尸生命值
+off_zombieNext = 0x168 # 下一只僵尸
