@@ -22,6 +22,8 @@ class Pvz:
         self.SetScreen()
         self.ghwnd = win32gui.FindWindow(None, "Plants vs. Zombies")
         self.game = pymem.Pymem("popcapgame1.exe")
+        self.collectSwitch = False
+        self.key = True
 
     def SetScreen(self) -> None:
         """设置绘画屏幕."""
@@ -57,6 +59,22 @@ class Pvz:
                 zombies.append((zombieX, zombieY, zombieHeal, (zombieLimit - i), zombieLine))
         return zombies
         
+    def AutoCollect(self) -> None:
+        "自动收集."
+        base = self.game.read_int(self.game.read_int(self.game.read_int(self.game.base_address + offsets.base) + offsets.first) + offsets.item)
+        count = 0
+        while True:
+            item_address = base + (offsets.nextItem * count)
+            item = self.game.read_int(item_address)
+            if item == 0:
+                break
+            elif self.game.read_int(item_address + 0x58) in [4, 5, 6]:
+                self.game.write_int(item_address + offsets.collect, 1)
+            count += 1
+        return None
+            
+        
+
     def Draw(self, zombie: tuple[int]) -> None:
         "绘制."
         heal = zombie[2]
@@ -75,6 +93,11 @@ class Pvz:
         heal_width, heal_height = heal_text.get_size()
         text_list.append((heal_text, ((x - heal_width), (y + number_height))))
         
+        menu_text = self.font.render(f"AutoCollect:{self.collectSwitch}", False, (255, 0, 0), None)
+        menu_width, menu_height = menu_text.get_size()
+        menu_x, menu_y = win32gui.ClientToScreen(self.ghwnd, (-menu_width, 0))
+        text_list.append((menu_text, (menu_x, menu_y)))
+
         self.screen.blits(text_list)
         # print(f"X:{x}  Y:{y}  绘制.")
         return None
@@ -86,6 +109,18 @@ class Pvz:
 
     def Update(self) -> None:
         """更新屏幕."""
+        if self.key:
+            if (win32api.GetAsyncKeyState(0x70) != 0):
+                self.collectSwitch = not self.collectSwitch
+                self.key = False
+
+        if not self.key:
+            if (win32api.GetAsyncKeyState(0x70) == 0):
+                self.key = True
+        
+        if self.collectSwitch:
+            self.AutoCollect()
+        
         self.screen.fill(self.fuchsia)
         point = self.GetZombies()
 
@@ -103,15 +138,3 @@ class Pvz:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
-
-
-if __name__ == "__main__":
-    test = Pvz()
-    while True:
-        if test.GameIsStarted() and test.isFront():
-            test.Update()
-            time.sleep(0.1)
-        else:
-            test.ClearScreen()
-            time.sleep(0.1)
-            
